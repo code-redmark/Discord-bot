@@ -32,7 +32,7 @@ async def audio(interaction):
     try:
         voice = discord.utils.get(bot.voice_clients, guild=interaction.guild)
         if voice == None: # if there are no voice clients in the interactions guild...
-            await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " mi connetto..")
+            await interaction.followup.send("<@" + str(interaction.user.id) + ">" + " mi connetto..")
             await interaction.user.voice.channel.connect()
             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
 
@@ -43,7 +43,7 @@ async def audio(interaction):
              discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
 
     except:   
-            await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " Non sei connesso a nessun canale oppure c'è stato un errore")
+            await interaction.followup.send("<@" + str(interaction.user.id) + ">" + " Non sei connesso a nessun canale oppure c'è stato un errore")
             
             pass
 
