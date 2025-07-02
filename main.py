@@ -12,7 +12,8 @@ token = os.getenv('DISCORD_TOKEN')
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 intents = discord.Intents.all()     # Specify all bots intents(all because idk what i actually have to give him)
 
-bot = commands.Bot(command_prefix = '/', intents = intents) 
+bot = commands.Bot(command_prefix = '/', intents = intents)
+ 
 
 # get the voice channel in which the user calling the command is connected, make bot play audio
 
@@ -22,22 +23,28 @@ async def on_ready():
     await bot.tree.sync()
 
 
+
 @bot.tree.command(name="audio")
 async def audio(interaction):
 
+    audio = discord.FFmpegPCMAudio("https://cdn.freecodecamp.org/curriculum/js-music-player/scratching-the-surface.mp3")
+
     try:
-        voice = discord.utils.get(bot.voice_clients, guild=interaction.guild) # This allows for more functionality with voice channels
-
-        if voice == None: # None being the default value if the bot isnt in a channel (which is why the is_connected() is returning errors)
-            await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " mi sto connettendo...")
+        voice = discord.utils.get(bot.voice_clients, guild=interaction.guild)
+        if voice == None: # if there are no voice clients in the interactions guild...
+            await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " mi connetto..")
             await interaction.user.voice.channel.connect()
-            
-        else:
-            await interaction.response.send_message("sono già connesso, dovrei mettere la musica direttamente ma non lo so fare...")
-    except:
-        
-        await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " Non sei connesso a nessun canale oppure c'è stato un errore")
+            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
 
-    pass
+        elif voice.channel != interaction.user.voice.channel:  # Move to user channel if already connected
+             await voice.move_to(interaction.user.voice.channel)
+             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
+        else:
+             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
+
+    except:   
+            await interaction.response.send_message("<@" + str(interaction.user.id) + ">" + " Non sei connesso a nessun canale oppure c'è stato un errore")
+            
+            pass
 
 bot.run(token)
