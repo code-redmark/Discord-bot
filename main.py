@@ -5,59 +5,40 @@ from discord.ext import commands
 
 from dotenv import load_dotenv # library to put tokens, passwords, api keys etc.
 import os # to get token
-
-import traceback
 import asyncio
-import logging
 
-load_dotenv()
+load_dotenv() # Get token from .env
 token = os.getenv('DISCORD_TOKEN')
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+
 intents = discord.Intents.all()     # Specify all bots intents(all because idk what i actually have to give him)
-
 bot = commands.Bot(command_prefix = '/', intents = intents)
- 
-
-# get the voice channel in which the user calling the command is connected, make bot play audio
 
 @bot.event
-async def on_ready():
-    print("Pronto per essere usato, slash commands sincronizzati..")
-    await bot.tree.sync()
-
-
-
-@bot.tree.command(name="audio")
-async def audio(interaction):
-
-    audio = discord.FFmpegPCMAudio("https://cdn.freecodecamp.org/curriculum/js-music-player/scratching-the-surface.mp3")
-
+async def on_ready(): # syncing command tree
     try:
-        voice = discord.utils.get(bot.voice_clients, guild=interaction.guild)
-        await interaction.response.defer()
-
-        if voice == None: # if there are no voice clients in the interactions guild...
-            await interaction.user.voice.channel.connect()
-            await interaction.followup.send(interaction.user.mention + " mi connetto..")
-            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
-
-        elif voice.channel != interaction.user.voice.channel:  # Move to user channel if already connected
-            await voice.disconnect()
-            await interaction.user.voice.channel.connect()
-            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
-        else:
-            discord.utils.get(bot.voice_clients, guild=interaction.guild).stop()
-            asyncio.sleep(1)
-            await interaction.followup.send(interaction.user.mention + " sono già connesso, farò ripartire la musica da capo")
-            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
-
-    except Exception as ex:   
-            await interaction.followup.send(interaction.user.mention + " Non sei connesso a nessun canale oppure c'è stato un errore")
-            ex_channel = discord.utils.get(interaction.guild.channels, name="marco_exception_log") # change name to selected error channel
-            ex_msg = traceback.format_exc() # formatting error to send it in channel
-            await ex_channel.send(ex_msg)
+        await bot.tree.sync()
+        print("synced command tree", bot.tree.get_commands())
+    except:
+        print("couldn't sync commands")
     
-            pass
+    print(f"logged in as {bot.user}")
+    print("Pronto per essere usato, slash commands sincronizzati..") 
 
-bot.run(token)
+async def bot_main():   # MAIN COROUTINE 
+    async with bot:  
+        # always remember not to start the bot before loading extensions, since its going to block the start of the bot initially
+        await bot.load_extension('cogs.music')
+        await bot.start(token)
+        
+if __name__ == "__main__": 
+    asyncio.run(bot_main()) #running main coroutine
+
+
+
+
+    
+
+
+
+
