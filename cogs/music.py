@@ -5,7 +5,7 @@ from discord.ext import commands
 
 import traceback
 import asyncio
-import yt_dlp
+from yt_dlp import YoutubeDL
 
 
 
@@ -13,20 +13,39 @@ class PlaySound(commands.Cog):
     def __init__(self, bot):
          self.bot = bot 
 
-    async def play(self, url):
-         ytdlp = yt_dlp.y
-         pass
+    async def playquery(self, interaction, query):
+
+        ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True,
+        'default_search': 'ytsearch',
+        'noplaylist': True,
+        'skip_download': True
+    }
+
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(query, download=False)
+
+            # If the query returns a search result or playlist
+            if 'entries' in info:
+                info = info['entries'][0]  # take first result safely
+
+            stream_url = info.get('url')
+            discord.utils.get(self.bot.voice_clients, guild=interaction.guild).play(discord.FFmpegPCMAudio(stream_url))
+            if not stream_url:
+                await interaction.channel.send(" Could not find a valid stream URL.")
+                return
+
+        except Exception as e:
+            await interaction.channel.send(f"yt-dlp error: {e}")
+        return
 
          
-    @app_commands.command(name="audio", description="Ciao ciao ciao ciao")
+    @app_commands.command(name="audio", description="non so come cazzo si diamine acciderbolina vez")
 
-    async def connect(self, interaction: discord.Interaction, link = None):
-
-        audio = discord.FFmpegPCMAudio() # audio to be played
+    async def connect(self, interaction: discord.Interaction, richiesta: str):
     
-
-
-
         try:
 
             voice = discord.utils.get(self.bot.voice_clients, guild=interaction.guild)
@@ -35,17 +54,17 @@ class PlaySound(commands.Cog):
             if voice == None: # if there are no voice clients in the interactions guild...
                 await interaction.user.voice.channel.connect()
                 await interaction.followup.send(interaction.user.mention + " mi connetto..")
-                discord.utils.get(self.bot.voice_clients, guild=interaction.guild).play(audio)
+                await self.playquery(interaction, richiesta)
 
             elif voice.channel != interaction.user.voice.channel:  # Move to user channel if already connected
                 await voice.disconnect()
                 await interaction.user.voice.channel.connect()
-                discord.utils.get(self.bot.voice_clients, guild=interaction.guild).play(audio)
+                await self.playquery(interaction, richiesta)
             else:
-                discord.utils.get(self.bot.voice_clients, guild=interaction.guild).stop()
+                voice.stop()
                 await asyncio.sleep(1)
-                await interaction.followup.send(interaction.user.mention + " sono già connesso, farò ripartire la musica da capo")
-                discord.utils.get(self.bot.voice_clients, guild=interaction.guild).play(audio)
+                await interaction.followup.send(interaction.user.mention + " cambio canzone cazzo era bella questa dio cane")
+                await self.playquery(interaction, richiesta)
 
         except Exception as ex:   
                 await interaction.followup.send(interaction.user.mention + " Non sei connesso a nessun canale oppure c'è stato un errore")
