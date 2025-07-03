@@ -2,9 +2,13 @@ import discord
 
 from discord import app_commands
 from discord.ext import commands
-import logging
+
 from dotenv import load_dotenv # library to put tokens, passwords, api keys etc.
-import os
+import os # to get token
+
+import traceback
+import asyncio
+import logging
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -31,20 +35,29 @@ async def audio(interaction):
 
     try:
         voice = discord.utils.get(bot.voice_clients, guild=interaction.guild)
+        await interaction.response.defer()
+
         if voice == None: # if there are no voice clients in the interactions guild...
-            await interaction.followup.send("<@" + str(interaction.user.id) + ">" + " mi connetto..")
             await interaction.user.voice.channel.connect()
+            await interaction.followup.send(interaction.user.mention + " mi connetto..")
             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
 
         elif voice.channel != interaction.user.voice.channel:  # Move to user channel if already connected
-             await voice.move_to(interaction.user.voice.channel)
-             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
+            await voice.disconnect()
+            await interaction.user.voice.channel.connect()
+            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
         else:
-             discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
+            discord.utils.get(bot.voice_clients, guild=interaction.guild).stop()
+            asyncio.sleep(1)
+            await interaction.followup.send(interaction.user.mention + " sono già connesso, farò ripartire la musica da capo")
+            discord.utils.get(bot.voice_clients, guild=interaction.guild).play(audio)
 
-    except:   
-            await interaction.followup.send("<@" + str(interaction.user.id) + ">" + " Non sei connesso a nessun canale oppure c'è stato un errore")
-            
+    except Exception as ex:   
+            await interaction.followup.send(interaction.user.mention + " Non sei connesso a nessun canale oppure c'è stato un errore")
+            ex_channel = discord.utils.get(interaction.guild.channels, name="marco_exception_log") # change name to selected error channel
+            ex_msg = traceback.format_exc() # formatting error to send it in channel
+            await ex_channel.send(ex_msg)
+    
             pass
 
 bot.run(token)
